@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>QR Code Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  </head>
+
+  <body>
+    <h2>Générateur de QR Code FrankailleTool</h2>
+
+    <!-- Champ texte -->
+    <input
+      id="text"
+      type="text"
+      placeholder="Entrez une URL ou un texte"
+      style="width: 600px"
+    /><br /><br />
+
+    <!-- Sélecteur de couleur -->
+    Couleur :
+    <input type="color" id="colorPicker" value="#000000" /><br /><br />
+
+    <!-- Choix source du logo -->
+    <strong>Source du logo :</strong><br />
+    <label
+      ><input type="radio" name="logoSource" value="upload" checked />
+      Upload</label
+    >
+    <label
+      ><input type="radio" name="logoSource" value="favicon" /> Favicon
+      auto</label
+    >
+    <br /><br />
+
+    <!-- Upload logo -->
+    Logo :
+    <input type="file" id="logoInput" accept="image/*" /><br /><br />
+
+    <!-- Style des points -->
+    Style des points :
+    <select id="dotStyle">
+      <option value="square">Carré</option>
+      <option value="rounded">Arrondi</option>
+      <option value="dots">Points</option>
+      <option value="classy">Classy</option>
+      <option value="classy-rounded">Classy arrondi</option>
+      <option value="extra-rounded">Extra arrondi</option></select
+    ><br /><br />
+
+    <!-- Format -->
+    Format :
+    <label><input type="radio" name="format" value="png" checked /> PNG</label>
+    <label><input type="radio" name="format" value="jpeg" /> JPEG</label>
+    <label><input type="radio" name="format" value="webp" /> WEBP</label>
+    <label><input type="radio" name="format" value="svg" /> SVG</label
+    ><br /><br />
+
+    <!-- Bouton générer -->
+    <button onclick="generateQR()">Générer</button>
+
+    <!-- Bouton télécharger -->
+    <button onclick="downloadQR()">Télécharger</button>
+
+    <br /><br />
+
+    <!-- Conteneur QR -->
+    <div id="qrcode"></div>
+
+    <script>
+      /* ------------------------------
+         Fonction récupération favicon
+      ------------------------------ */
+      function getFavicon(url) {
+        return (
+          "https://www.google.com/s2/favicons?sz=128&domain_url=" +
+          encodeURIComponent(url)
+        );
+      }
+      /* ------------------------------
+         QR CODE INITIAL
+      ------------------------------ */
+      let qrCode = new QRCodeStyling({
+        width: 300,
+        height: 300,
+        type: "png",
+        data: "",
+        dotsOptions: {
+          color: "#000000",
+          type: "square",
+        },
+        backgroundOptions: {
+          color: "#ffffff",
+        },
+        imageOptions: {
+          crossOrigin: "anonymous",
+          margin: 10,
+        },
+      });
+
+      qrCode.append(document.getElementById("qrcode"));
+
+      /* ------------------------------
+         GENERATE QR
+      ------------------------------ */
+      async function generateQR() {
+        const text = document.getElementById("text").value;
+        const color = document.getElementById("colorPicker").value;
+        const dotStyle = document.getElementById("dotStyle").value;
+        const format = document.querySelector(
+          'input[name="format"]:checked',
+        ).value;
+        const logoSource = document.querySelector(
+          'input[name="logoSource"]:checked',
+        ).value;
+
+        // Mise à jour du QR sans logo
+        qrCode.update({
+          data: text,
+          type: format,
+          dotsOptions: {
+            color: color,
+            type: dotStyle,
+          },
+          image: null,
+        });
+
+        /* --- MODE 1 : UPLOAD --- */
+        if (logoSource === "upload") {
+          const file = document.getElementById("logoInput").files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              qrCode.update({
+                image: e.target.result,
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+
+        /* --- MODE 2 : FAVICON AUTO --- */
+        if (logoSource === "favicon") {
+          const favicon = await getFavicon(text);
+          if (favicon) {
+            qrCode.update({
+              image: favicon,
+            });
+          }
+        }
+      }
+
+      /* ------------------------------
+         DOWNLOAD QR
+      ------------------------------ */
+      function downloadQR() {
+        const format = document.querySelector(
+          'input[name="format"]:checked',
+        ).value;
+        qrCode.download({ name: "qr-code", extension: format });
+      }
+    </script>
+  </body>
+</html>
